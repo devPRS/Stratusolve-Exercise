@@ -26,7 +26,7 @@
                 <h4 class="modal-title" id="myModalLabel">Modal title</h4>
             </div>
             <div class="modal-body">
-                <form action="update_task.php" method="post">
+                
                     <div class="row">
                         <div class="col-md-12" style="margin-bottom: 5px;;">
                             <input id="InputTaskName" type="text" placeholder="Task Name" class="form-control">
@@ -35,12 +35,12 @@
                             <textarea id="InputTaskDescription" placeholder="Description" class="form-control"></textarea>
                         </div>
                     </div>
-                </form>
+                
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-                <button id="deleteTask" type="button" class="btn btn-danger">Delete Task</button>
-                <button id="saveTask" type="button" class="btn btn-primary">Save changes</button>
+                <button id="deleteTask" type="button" data-id="0" class="action btn btn-danger">Delete Task</button>
+                <button id="saveTask" type="button" data-id="0" class="action btn btn-primary">Save changes</button>
             </div>
         </div>
     </div>
@@ -71,38 +71,59 @@
 <script type="text/javascript" src="assets/js/jquery-1.12.3.min.js"></script>
 <script type="text/javascript" src="assets/js/bootstrap.min.js"></script>
 <script type="text/javascript">
-    var currentTaskId = -1;
-    $('#myModal').on('show.bs.modal', function (event) {
-        var triggerElement = $(event.relatedTarget); // Element that triggered the modal
-        var modal = $(this);
-        if (triggerElement.attr("id") == 'newTask') {
-            modal.find('.modal-title').text('New Task');
-            $('#deleteTask').hide();
-            currentTaskId = -1;
-        } else {
-            modal.find('.modal-title').text('Task details');
-            $('#deleteTask').show();
-            currentTaskId = triggerElement.attr("id");
-            console.log('Task ID: '+triggerElement.attr("id"));
-        }
-    });
-    $('#saveTask').click(function() {
-        //Assignment: Implement this functionality
-        alert('Save... Id:'+currentTaskId);
-        $('#myModal').modal('hide');
-        updateTaskList();
-    });
-    $('#deleteTask').click(function() {
-        //Assignment: Implement this functionality
-        alert('Delete... Id:'+currentTaskId);
-        $('#myModal').modal('hide');
-        updateTaskList();
-    });
-    function updateTaskList() {
-        $.post("list_tasks.php", function( data ) {
-            $( "#TaskList" ).html( data );
-        });
-    }
-    updateTaskList();
+    /*
+     * i am sorry i actually couldnt deal with how this was written it as it was very over done and not very S.O.L.I.D.
+     */
+    
+    //lets get the tasks 
+    manageState();
+     
+     //lets listen and check if we should edit create or update a task
+     $('.action').on('click',function(e){
+         var action = $(this).attr('id');
+         var id     = $(this).attr('data-id');
+         var name   = '';
+         var desc   = '';
+         if(action !== 'delete'){
+             name = $('#InputTaskName').val();
+             desc = $('#InputTaskDescription').val();
+         }
+         $('#myModal').modal('hide');
+         manageState(action,id,name,desc);
+     });
+     
+    
+     
+     //core function to call crud
+     function manageState(action = 'all',id = 0,name = 0,desc =0){
+         
+          $.post("../stratusolve/controller/gateKeeper.php", 
+            {
+                action :action,
+                id:id,
+                name:name,
+                desc:desc
+            }, 
+            function(result){
+                //first clean all inputs
+                $('input,textarea').val('');
+                $('#deleteTask').attr('data-id',0);
+                $('#saveTask').attr('data-id',0);
+                //then update the list
+                $( "#TaskList" ).html(result); 
+                
+                //a lil to handle late static binding as live isnt available in the jquery we have in the test
+                $('a.list-group-item').on('click',function(e){
+                    var myid = $(this).attr('id');
+                    $('#InputTaskName').val($('#'+myid+'-list-group-item-heading').html());
+                    $('#InputTaskDescription').val($('#'+myid+'-list-group-item-text').html());
+                    $('#deleteTask').attr('data-id',$(this).attr('id'));
+                    $('#saveTask').attr('data-id',$(this).attr('id'));
+                });
+               
+            });
+            
+     }
+     
 </script>
 </html>
